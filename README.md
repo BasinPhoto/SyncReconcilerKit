@@ -17,7 +17,8 @@ This pattern makes it easy to build **server-driven, offline-capable apps** with
 - 🧩 Reusable **child sync tasks** (handle multiple child collections per parent).
 - 🛡️ Concurrency-safe with Swift 6.2 strict isolation (`@ModelActor`, `Sendable`).
 - 🧪 Fully testable with in-memory containers and [Swift Testing](https://github.com/apple/swift-testing).
-- ⚙️ Configurable **deletion policies** (`.none`, `.hardDeleteMissing`).
+- ⚙️ Configurable **deletion policies**: `.none`, `.hardDeleteMissing`, `.softDeleteMissing`.
+- ♻️ Automatic reactivation: if a soft-deleted entity reappears from the server with a newer `updatedAt`, it is restored (with `deletedAt = nil`).
 - 📦 No external dependencies — just SwiftData and Swift standard libraries.
 
 ---
@@ -57,15 +58,12 @@ struct RoomDTO: RemoteStampedDTO, Sendable {
 
 ```swift
 @Model
-final class Studio: Identifiable, RemoteStampedModel, MergeAppliable, InitFromDTO {
+final class Studio: SyncableModel, SoftDeletable {
     @Attribute(.unique) var remoteId: String
     var name: String
     var updatedAt: Date
+    var deletedAt: Date?   // for soft-delete support
     @Relationship(deleteRule: .cascade) var rooms: [Room] = []
-    
-    var id: String {
-        self.remoteId
-    }
 
     required convenience init(dto: StudioDTO) {
         self.init(remoteId: dto.id, name: dto.name, updatedAt: dto.updatedAt)
@@ -109,17 +107,13 @@ let engine = SyncEngine(modelContainer: container)
 
 try await engine.upsertCollection(
     from: dtos,
-    model: Studio.self,
-    id: \.id,
-    updatedAt: \.updatedAt,
     fetchExistingByIds: { ids, ctx in
         try ctx.fetch(FetchDescriptor(predicate: #Predicate<Studio> { ids.contains($0.remoteId) }))
     },
-    deletionPolicy: .hardDeleteMissing,
-    apply: { model, dto, _ in model.apply(dto) },
-    makeNew: { dto, _ in Studio(dto: dto) },
+    deletionPolicy: .softDeleteMissing,
     childTasks: [AnyChildTask(roomsTask, parentId: \.id)],
-    extractParentIdForChildren: \.id
+    extractParentIdForChildren: \.id,
+    requireNonEmptyFullSlice: true
 )
 ```
 ## Testing
@@ -130,7 +124,8 @@ This package is fully covered by Swift Testing.
 
     •    ✅ Generic parent/child sync
     •    ✅ Swift Testing suite
-    •    🔜 Support for soft-delete strategies
+    •    ✅ Support for soft-delete strategies
+    •    ✅ Automatic reactivation of soft-deleted entities
     •    🔜 Built-in utilities for fetchByIds and scoping
     
 ## License

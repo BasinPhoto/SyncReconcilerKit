@@ -29,17 +29,14 @@ struct EquipmentDTO: RemoteStampedDTO, Sendable, Equatable {
 
 // MARK: - Test Models
 @Model
-final class Studio: Identifiable, RemoteStampedModel, MergeAppliable, InitFromDTO {
+final class Studio: SyncableModel, SoftDeletable {
     @Attribute(.unique) var remoteId: String
     var name: String
     var updatedAt: Date
+    var deletedAt: Date?
     @Relationship(deleteRule: .cascade) var rooms: [Room] = []
     @Relationship(deleteRule: .cascade) var equipments: [Equipment] = []
 
-    var id: String {
-        remoteId
-    }
-    
     typealias DTO = StudioDTO
     required convenience init(dto: DTO) {
         self.init(remoteId: dto.id, name: dto.name, updatedAt: dto.updatedAt)
@@ -53,16 +50,13 @@ final class Studio: Identifiable, RemoteStampedModel, MergeAppliable, InitFromDT
 }
 
 @Model
-final class Room: Identifiable, RemoteStampedModel, MergeAppliable, InitFromDTO {
+final class Room: SyncableModel, SoftDeletable {
     @Attribute(.unique) var remoteId: String
     var title: String
     var updatedAt: Date
+    var deletedAt: Date?
     @Relationship(inverse: \Studio.rooms) var studio: Studio?
     
-    var id: String {
-        remoteId
-    }
-
     typealias DTO = RoomDTO
     required convenience init(dto: DTO) {
         self.init(remoteId: dto.id, title: dto.title, updatedAt: dto.updatedAt, studio: nil)
@@ -77,16 +71,13 @@ final class Room: Identifiable, RemoteStampedModel, MergeAppliable, InitFromDTO 
 }
 
 @Model
-final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFromDTO {
+final class Equipment: SyncableModel, SoftDeletable {
     @Attribute(.unique) var remoteId: String
     var name: String
     var updatedAt: Date
+    var deletedAt: Date?
     @Relationship(inverse: \Studio.equipments) var studio: Studio?
     
-    var id: String {
-        remoteId
-    }
-
     typealias DTO = EquipmentDTO
     required convenience init(dto: DTO) {
         self.init(remoteId: dto.id, name: dto.name, updatedAt: dto.updatedAt, studio: nil)
@@ -146,13 +137,8 @@ final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFro
         // Full slice insert
         _ = try await engine.upsertCollection(
             from: first,
-            model: Studio.self,
-            id: \.id,
-            updatedAt: \.updatedAt,
             fetchExistingByIds: Self.studiosByIds,
             deletionPolicy: .hardDeleteMissing,
-            apply: { m, dto, _ in m.apply(dto) },
-            makeNew: { dto, _ in Studio(dto: dto) },
             childTasks: [],
             extractParentIdForChildren: \.id
         )
@@ -170,13 +156,8 @@ final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFro
         ]
         _ = try await engine.upsertCollection(
             from: second,
-            model: Studio.self,
-            id: \.id,
-            updatedAt: \.updatedAt,
             fetchExistingByIds: Self.studiosByIds,
             deletionPolicy: .hardDeleteMissing,
-            apply: { m, dto, _ in m.apply(dto) },
-            makeNew: { dto, _ in Studio(dto: dto) },
             childTasks: [],
             extractParentIdForChildren: \.id
         )
@@ -196,13 +177,8 @@ final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFro
         ]
         _ = try await engine.upsertCollection(
             from: first,
-            model: Studio.self,
-            id: \.id,
-            updatedAt: \.updatedAt,
             fetchExistingByIds: Self.studiosByIds,
             deletionPolicy: .none,
-            apply: { m, dto, _ in m.apply(dto) },
-            makeNew: { dto, _ in Studio(dto: dto) },
             childTasks: [],
             extractParentIdForChildren: \.id
         )
@@ -212,13 +188,8 @@ final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFro
         ]
         _ = try await engine.upsertCollection(
             from: second,
-            model: Studio.self,
-            id: \.id,
-            updatedAt: \.updatedAt,
             fetchExistingByIds: Self.studiosByIds,
             deletionPolicy: .none,
-            apply: { m, dto, _ in m.apply(dto) },
-            makeNew: { dto, _ in Studio(dto: dto) },
             childTasks: [],
             extractParentIdForChildren: \.id
         )
@@ -273,13 +244,8 @@ final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFro
 
         _ = try await engine.upsertCollection(
             from: first,
-            model: Studio.self,
-            id: \.id,
-            updatedAt: \.updatedAt,
             fetchExistingByIds: Self.studiosByIds,
             deletionPolicy: .hardDeleteMissing,
-            apply: { m, dto, _ in m.apply(dto) },
-            makeNew: { dto, _ in Studio(dto: dto) },
             childTasks: [
                 AnyChildTask(roomsTask,      parentId: \.id),
                 AnyChildTask(equipmentsTask, parentId: \.id)
@@ -305,13 +271,8 @@ final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFro
 
         _ = try await engine.upsertCollection(
             from: second,
-            model: Studio.self,
-            id: \.id,
-            updatedAt: \.updatedAt,
             fetchExistingByIds: Self.studiosByIds,
             deletionPolicy: .hardDeleteMissing,
-            apply: { m, dto, _ in m.apply(dto) },
-            makeNew: { dto, _ in Studio(dto: dto) },
             childTasks: [
                 AnyChildTask(roomsTask,      parentId: \.id),
                 AnyChildTask(equipmentsTask, parentId: \.id)
@@ -334,13 +295,8 @@ final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFro
         let first = [ StudioDTO(id: "s1", name: "Alpha", updatedAt: now, rooms: [], equipments: []) ]
         _ = try await engine.upsertCollection(
             from: first,
-            model: Studio.self,
-            id: \.id,
-            updatedAt: \.updatedAt,
             fetchExistingByIds: Self.studiosByIds,
             deletionPolicy: .hardDeleteMissing,
-            apply: { m, dto, _ in m.apply(dto) },
-            makeNew: { dto, _ in Studio(dto: dto) },
             childTasks: [],
             extractParentIdForChildren: \.id
         )
@@ -350,13 +306,8 @@ final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFro
         let second = [ StudioDTO(id: "s1", name: "ShouldNotWin", updatedAt: older, rooms: [], equipments: []) ]
         _ = try await engine.upsertCollection(
             from: second,
-            model: Studio.self,
-            id: \.id,
-            updatedAt: \.updatedAt,
             fetchExistingByIds: Self.studiosByIds,
             deletionPolicy: .hardDeleteMissing,
-            apply: { m, dto, _ in m.apply(dto) },
-            makeNew: { dto, _ in Studio(dto: dto) },
             childTasks: [],
             extractParentIdForChildren: \.id
         )
@@ -365,5 +316,250 @@ final class Equipment: Identifiable, RemoteStampedModel, MergeAppliable, InitFro
         let s1: [Studio] = try Self.fetchAll(Studio.self, ctx)
         #expect(s1.count == 1)
         #expect(s1.first?.name == "Alpha")
+    }
+
+    @Test func softDelete_Parent_FullSlice() async throws {
+        let (engine, container) = try Self.engine()
+        let now = Date()
+
+        // Insert two studios
+        let first = [
+            StudioDTO(id: "s1", name: "Alpha", updatedAt: now, rooms: [], equipments: []),
+            StudioDTO(id: "s2", name: "Beta",  updatedAt: now, rooms: [], equipments: [])
+        ]
+        _ = try await engine.upsertCollection(
+            from: first,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .none,
+            childTasks: [],
+            extractParentIdForChildren: \.id
+        )
+
+        // Full slice now contains only s1 → s2 should be soft-deleted
+        let later = now.addingTimeInterval(5)
+        let second = [ StudioDTO(id: "s1", name: "Alpha", updatedAt: later, rooms: [], equipments: []) ]
+        _ = try await engine.upsertCollection(
+            from: second,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .softDeleteMissing,
+            childTasks: [],
+            extractParentIdForChildren: \.id,
+            requireNonEmptyFullSlice: true
+        )
+
+        let ctx = ModelContext(container)
+        let studios = try ctx.fetch(FetchDescriptor<Studio>())
+        let s1 = studios.first { $0.remoteId == "s1" }
+        let s2 = studios.first { $0.remoteId == "s2" }
+        #expect(s1?.deletedAt == nil)
+        #expect(s2?.deletedAt != nil) // soft-deleted
+    }
+
+    @Test func softDelete_Children_Scoped() async throws {
+        let (engine, container) = try Self.engine()
+        let now = Date()
+
+        // Studio with two rooms initially
+        let first = [
+            StudioDTO(
+                id: "s1",
+                name: "Alpha",
+                updatedAt: now,
+                rooms: [
+                    RoomDTO(id: "r1", title: "A", updatedAt: now),
+                    RoomDTO(id: "r2", title: "B", updatedAt: now)
+                ],
+                equipments: []
+            )
+        ]
+
+        let roomsTaskSoft = ChildSyncTask<StudioDTO, Studio, Room>(
+            extract: { $0.rooms },
+            fetchExistingByIds: Self.roomsByIds,
+            fetchScopeForDeletion: { parent, ctx in
+                let pid = parent.remoteId
+                return try ctx.fetch(
+                    FetchDescriptor(predicate: #Predicate<Room> { $0.studio?.remoteId == pid })
+                )
+            },
+            applyExtra: { model, _, parent, _ in if model.studio !== parent { model.studio = parent } },
+            deletionPolicy: .softDeleteMissing
+        )
+
+        _ = try await engine.upsertCollection(
+            from: first,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .none,
+            childTasks: [ AnyChildTask(roomsTaskSoft, parentId: \.id) ],
+            extractParentIdForChildren: \.id
+        )
+
+        // Second payload drops r2 → it should be soft-deleted
+        let later = now.addingTimeInterval(10)
+        let second = [
+            StudioDTO(
+                id: "s1",
+                name: "Alpha",
+                updatedAt: later,
+                rooms: [ RoomDTO(id: "r1", title: "A+", updatedAt: later) ],
+                equipments: []
+            )
+        ]
+
+        _ = try await engine.upsertCollection(
+            from: second,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .none,
+            childTasks: [ AnyChildTask(roomsTaskSoft, parentId: \.id) ],
+            extractParentIdForChildren: \.id
+        )
+
+        let ctx = ModelContext(container)
+        let allRooms = try ctx.fetch(FetchDescriptor<Room>())
+        let r1 = allRooms.first { $0.remoteId == "r1" }
+        let r2 = allRooms.first { $0.remoteId == "r2" }
+        #expect(r1?.deletedAt == nil)
+        #expect(r2?.deletedAt != nil)
+    }
+
+    @Test func softDelete_Reactivation_Parent() async throws {
+        let (engine, container) = try Self.engine()
+        let now = Date()
+
+        // Full slice with two parents
+        let first = [
+            StudioDTO(id: "s1", name: "Alpha", updatedAt: now, rooms: [], equipments: []),
+            StudioDTO(id: "s2", name: "Beta",  updatedAt: now, rooms: [], equipments: [])
+        ]
+        _ = try await engine.upsertCollection(
+            from: first,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .none,
+            childTasks: [],
+            extractParentIdForChildren: \.id
+        )
+
+        // Next full slice contains only s1 → soft-delete s2
+        let later = now.addingTimeInterval(5)
+        let second = [ StudioDTO(id: "s1", name: "Alpha", updatedAt: later, rooms: [], equipments: []) ]
+        _ = try await engine.upsertCollection(
+            from: second,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .softDeleteMissing,
+            childTasks: [],
+            extractParentIdForChildren: \.id,
+            requireNonEmptyFullSlice: true
+        )
+
+        // Reactivation: server includes s2 again with newer updatedAt
+        let later2 = later.addingTimeInterval(10)
+        let third = [
+            StudioDTO(id: "s1", name: "Alpha", updatedAt: later2, rooms: [], equipments: []),
+            StudioDTO(id: "s2", name: "Beta+", updatedAt: later2, rooms: [], equipments: [])
+        ]
+        _ = try await engine.upsertCollection(
+            from: third,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .softDeleteMissing,
+            childTasks: [],
+            extractParentIdForChildren: \.id,
+            requireNonEmptyFullSlice: true
+        )
+
+        let ctx = ModelContext(container)
+        let all: [Studio] = try Self.fetchAll(Studio.self, ctx)
+        let s2 = all.first { $0.remoteId == "s2" }
+        #expect(s2 != nil)
+        #expect(s2?.deletedAt == nil) // reactivated
+        #expect(s2?.name == "Beta+")
+    }
+
+    @Test func softDelete_Reactivation_Child() async throws {
+        let (engine, container) = try Self.engine()
+        let now = Date()
+
+        // Initial payload: one studio with two rooms
+        let first = [
+            StudioDTO(
+                id: "s1",
+                name: "Alpha",
+                updatedAt: now,
+                rooms: [
+                    RoomDTO(id: "r1", title: "A", updatedAt: now),
+                    RoomDTO(id: "r2", title: "B", updatedAt: now)
+                ],
+                equipments: []
+            )
+        ]
+
+        let roomsTaskSoft = ChildSyncTask<StudioDTO, Studio, Room>(
+            extract: { $0.rooms },
+            fetchExistingByIds: Self.roomsByIds,
+            fetchScopeForDeletion: { parent, ctx in
+                let pid = parent.remoteId
+                return try ctx.fetch(
+                    FetchDescriptor(predicate: #Predicate<Room> { $0.studio?.remoteId == pid })
+                )
+            },
+            applyExtra: { model, _, parent, _ in if model.studio !== parent { model.studio = parent } },
+            deletionPolicy: .softDeleteMissing
+        )
+
+        // Insert
+        _ = try await engine.upsertCollection(
+            from: first,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .none,
+            childTasks: [ AnyChildTask(roomsTaskSoft, parentId: \.id) ],
+            extractParentIdForChildren: \.id
+        )
+
+        // Second payload drops r2 → soft-delete it
+        let later = now.addingTimeInterval(5)
+        let second = [
+            StudioDTO(
+                id: "s1",
+                name: "Alpha",
+                updatedAt: later,
+                rooms: [ RoomDTO(id: "r1", title: "A+", updatedAt: later) ],
+                equipments: []
+            )
+        ]
+        _ = try await engine.upsertCollection(
+            from: second,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .none,
+            childTasks: [ AnyChildTask(roomsTaskSoft, parentId: \.id) ],
+            extractParentIdForChildren: \.id
+        )
+
+        // Third payload returns r2 with newer updatedAt → should reactivate
+        let later2 = later.addingTimeInterval(10)
+        let third = [
+            StudioDTO(
+                id: "s1",
+                name: "Alpha",
+                updatedAt: later2,
+                rooms: [
+                    RoomDTO(id: "r1", title: "A++", updatedAt: later2),
+                    RoomDTO(id: "r2", title: "B+",  updatedAt: later2)
+                ],
+                equipments: []
+            )
+        ]
+        _ = try await engine.upsertCollection(
+            from: third,
+            fetchExistingByIds: Self.studiosByIds,
+            deletionPolicy: .none,
+            childTasks: [ AnyChildTask(roomsTaskSoft, parentId: \.id) ],
+            extractParentIdForChildren: \.id
+        )
+
+        let ctx = ModelContext(container)
+        let rooms = try Self.fetchAll(Room.self, ctx)
+        let r2 = rooms.first { $0.remoteId == "r2" }
+        #expect(r2 != nil)
+        #expect(r2?.deletedAt == nil)
+        #expect(r2?.title == "B+")
     }
 }
