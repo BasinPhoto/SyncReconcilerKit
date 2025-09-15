@@ -51,6 +51,7 @@ struct RoomDTO: RemoteStampedDTO, Sendable {
     let title: String
     let updatedAt: Date
 }
+```
 
 ### 2. Define Models
 
