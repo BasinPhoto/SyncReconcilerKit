@@ -38,7 +38,7 @@ Add the package to your Xcode project:
 ### 1. Define DTOs
 
 ```swift
-struct StudioDTO: RemoteStampedDTO, Sendable {
+struct StudioDTO: RemoteStampedDTO {
     typealias ID = String
     let id: String
     let name: String
@@ -46,7 +46,7 @@ struct StudioDTO: RemoteStampedDTO, Sendable {
     let rooms: [RoomDTO]
 }
 
-struct RoomDTO: RemoteStampedDTO, Sendable {
+struct RoomDTO: RemoteStampedDTO {
     typealias ID = String
     let id: String
     let title: String
