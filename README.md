@@ -27,7 +27,7 @@ This pattern makes it easy to build **server-driven, offline-capable apps** with
 Add the package to your Xcode project:
 
 1. In Xcode, go to **File → Add Packages…**
-2. Enter the package URL of your repository (e.g., `https://github.com/your-org/SyncReconcilerKit.git`)
+2. Enter the package URL of your repository (e.g., `https://github.com/BasinPhoto/SyncReconcilerKit.git`)
 3. Add `SyncReconcilerKit` to your app and test targets.
 
 ---
