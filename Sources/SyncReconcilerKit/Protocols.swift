@@ -18,7 +18,7 @@ public protocol RemoteStampedDTO: Sendable {
 /// Local syncable SwiftData-model
 public protocol RemoteStampedModel: AnyObject {
     associatedtype RemoteID: Hashable & Sendable
-    var remoteId: RemoteID { get set }
+    var remoteId: RemoteID { get }
     var updatedAt: Date { get set }
 }
 

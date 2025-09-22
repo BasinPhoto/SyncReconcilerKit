@@ -139,8 +139,6 @@ where
                 touched.insert(cid)
             } else {
                 let newModel = ChildModel(dto: dto)
-                newModel.remoteId = cid
-                newModel.updatedAt = dto.updatedAt
                 task.applyExtra(newModel, dto, parent, context)
                 context.insert(newModel)
                 touched.insert(cid)

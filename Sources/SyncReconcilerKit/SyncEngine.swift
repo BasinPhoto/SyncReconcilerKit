@@ -105,7 +105,6 @@ public actor SyncEngine {
                     obj = found
                 } else {
                     obj = makeNew(dto, ctx)
-                    obj.remoteId = pid
                     obj.updatedAt = pUpdated
                     ctx.insert(obj)
                     byId[pid] = obj
